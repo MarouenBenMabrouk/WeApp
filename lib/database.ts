@@ -1,5 +1,5 @@
-import { createSupabaseClient } from './supabase';
-import type { Database } from './supabase';
+import { createClient } from './supabase/client';
+import type { Database } from './supabase/types';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type ProjectInsert = Database['public']['Tables']['projects']['Insert'];
@@ -9,7 +9,7 @@ type ChatMessage = Database['public']['Tables']['chat_messages']['Row'];
 type Document = Database['public']['Tables']['documents']['Row'];
 
 export class DatabaseService {
-  private supabase = createSupabaseClient();
+  private supabase = createClient();
 
   // Project operations
   async createProject(project: ProjectInsert): Promise<{ data: Project | null; error: any }> {
