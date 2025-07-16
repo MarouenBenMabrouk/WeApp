@@ -18,9 +18,20 @@ const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const [error, setError] = useState<string | null>(null);
+  
+  let supabase: ReturnType<typeof createClient> | null = null;
+  
+  try {
+    supabase = createClient();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to initialize Supabase');
+    setLoading(false);
+  }
 
   useEffect(() => {
+    if (!supabase) return;
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -38,7 +49,28 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-white mb-4">Supabase Connection Required</h2>
+          <p className="text-slate-400 mb-4">{error}</p>
+          <p className="text-slate-500">Please click "Connect to Supabase" in the top right corner to set up your database.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!supabase) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   const signUp = async (email: string, password: string, name?: string) => {
+    if (!supabase) throw new Error('Supabase not initialized');
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
